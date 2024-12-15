@@ -6,7 +6,6 @@ import numpy as np
 router = APIRouter()
 
 # Load the YOLO model
-hub.login('7b3ebd78c549c86f4d8bbe2d09510be47a18a4d0f5')
 
 model = YOLO("https://hub.ultralytics.com/models/1Vupp31yOeec0g1Ktlv0", task="detect")
 
