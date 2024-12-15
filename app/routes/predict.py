@@ -1,12 +1,14 @@
 from fastapi import APIRouter, File, UploadFile
-from ultralytics import YOLO
+from ultralytics import YOLO, hub
 import cv2
 import numpy as np
 
 router = APIRouter()
 
 # Load the YOLO model
-model = YOLO('yolov8n.pt')
+hub.login('7b3ebd78c549c86f4d8bbe2d09510be47a18a4d0f5')
+
+model = YOLO('https://hub.ultralytics.com/models/1Vupp31yOeec0g1Ktlv0')
 
 @router.post("/predict")
 async def predict(file: UploadFile = File(...)):
