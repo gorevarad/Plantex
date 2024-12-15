@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile
-from ultralytics import hub, YOLO
+from ultralytics import hub, YOLO, hub
 import cv2
 import numpy as np
 import torch

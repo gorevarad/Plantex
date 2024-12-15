@@ -3,7 +3,8 @@ flask-cors
 torch
 torchvision
 pillow
-
+hub
+python-multipart
 fastapi==0.110.2
 uvicorn==0.29.0
 opencv-python-headless==4.9.0.80
