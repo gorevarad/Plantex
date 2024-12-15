@@ -1,50 +1,37 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from fastapi import FastAPI, File, UploadFile
 from ultralytics import YOLO
-import os
-import uuid
+import cv2
+import numpy as np
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
+app = FastAPI()
 
-# Load the YOLOv8 model (use your trained model path)
-MODEL_PATH = "best.pt"  # Replace with your YOLOv8 model
-model = YOLO(MODEL_PATH)
+# Load the YOLO model
+model = YOLO('yolov8n.pt')
 
-# Directory to save uploaded photos and results
-UPLOAD_FOLDER = "uploads"
-RESULT_FOLDER = "results"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(RESULT_FOLDER, exist_ok=True)
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    contents = await file.read()
+    nparr = np.fromstring(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Perform prediction
+    results = model(img)
+    
+    # Process results
+    predictions = results[0].boxes.data
+    class_names = results[0].names
+    
+    # Get the class with the highest confidence
+    if len(predictions) > 0:
+        best_prediction = predictions[predictions[:, 4].argmax()]
+        class_id = int(best_prediction[5])
+        confidence = float(best_prediction[4])
+        class_name = class_names[class_id]
+        
+        return {"prediction": f"{class_name} ({confidence:.2f})"}
+    else:
+        return {"prediction": "No object detected"}
 
-@app.route('/process-photo', methods=['POST'])
-def process_photo():
-    if 'photo' not in request.files:
-        return jsonify({"error": "No photo provided"}), 400
-
-    # Save the uploaded photo
-    photo = request.files['photo']
-    filename = f"{uuid.uuid4().hex}_{photo.filename}"
-    photo_path = os.path.join(UPLOAD_FOLDER, filename)
-    photo.save(photo_path)
-
-    # Perform object detection
-    try:
-        results = model(photo_path)  # Perform inference
-        result_path = os.path.join(RESULT_FOLDER, f"result_{filename}")
-        results[0].plot(save=True, save_dir=RESULT_FOLDER)  # Save the processed image
-
-        # Return the result URL
-        return jsonify({
-            "message": "Photo processed successfully",
-            "result_url": f"/results/result_{filename}"
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/results/<filename>')
-def get_result(filename):
-    return send_from_directory(RESULT_FOLDER, filename)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000, host="127.0.0.1")
