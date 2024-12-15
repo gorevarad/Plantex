@@ -8,7 +8,7 @@ router = APIRouter()
 
 # Load the YOLO model
 
-model = YOLO('plantex1.pt')
+model = YOLO('app/routes/plantex1.pt')
 
 
 @router.post("/predict")
